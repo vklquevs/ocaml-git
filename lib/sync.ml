@@ -301,19 +301,22 @@ module Make (IO: IO) (Store: Store.S) = struct
         (Uri.path (Gri.to_uri t.gri))
 
     let smart_http t =
-      if t.discover then None else
-        let headers : (string * string) list = [
+      let ua = "User-Agent", "ogit/" ^ Version.current in
+      let headers : (string * string) list =
+        if t.discover then [ua]
+        else [
+          ua;
           "Content-Type",
           sprintf "application/x-%s-request" (string_of_request t.request);
         ]
-        in
-        Some (Marshal.to_string headers [])
+      in
+        Marshal.to_string headers []
 
     let to_string t =
       match protocol_exn (Gri.to_uri t.gri) with
       | `Git -> Some (git t)
       | `SSH -> Some (ssh t)
-      | `Smart_HTTP -> smart_http t
+      | `Smart_HTTP -> Some (smart_http t)
 
     let create request ~discover gri =
       Log.debug "Init.create request=%s discover=%b gri=%s"
