@@ -153,11 +153,27 @@ module M = struct
 
   let with_http ?init uri fn =
     Log.debug "HTTP connecting to %s" (Uri.to_string uri);
+    let credentials =
+      match Uri.userinfo uri with
+        | None -> None
+        | Some ui ->
+            match Misc.string_split ui ~on:':' with
+              | [user] ->
+                  Some (`Basic (Uri.pct_decode user, ""))
+              | [user; pass] ->
+                  Some (`Basic (Uri.pct_decode user, Uri.pct_decode pass))
+              | _ ->
+                  Some (`Other (Uri.pct_decode ui))
+    in
     let headers = match init with
       | None -> Cohttp.Header.of_list []
       | Some s ->
         let l = Marshal.from_string s 0 in
         Cohttp.Header.of_list l
+    in
+    let headers = match credentials with
+      | None -> headers
+      | Some auth -> Cohttp.Header.add_authorization headers auth
     in
     Log.debug "HTTP headers: %s"
       (Sexplib.Sexp.to_string (Cohttp.Header.sexp_of_t headers));
