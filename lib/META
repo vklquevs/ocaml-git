@@ -2,7 +2,7 @@
 # DO NOT EDIT (digest: a5309cdb2ceaaa63e5e543d2cbf6d838)
 version = "1.4.5"
 description = "A low-level interface to Git in pure OCaml"
-requires = "mstruct dolog ocamlgraph zip nocrypto uri lwt hex"
+requires = "mstruct dolog ocamlgraph zip nocrypto uri lwt hex cohttp.lwt"
 archive(byte) = "git.cma"
 archive(byte, plugin) = "git.cma"
 archive(native) = "git.cmxa"

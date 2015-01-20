@@ -302,13 +302,31 @@ module Make (IO: IO) (Store: Store.S) = struct
 
     let smart_http t =
       let ua = "User-Agent", "ogit/" ^ Version.current in
-      let headers : (string * string) list =
-        if t.discover then [ua]
-        else [
-          ua;
-          "Content-Type",
-          sprintf "application/x-%s-request" (string_of_request t.request);
-        ]
+      let credentials =
+        match Uri.userinfo (Gri.to_uri t.gri) with
+          | None -> None
+          | Some ui ->
+              match Misc.string_split ui ~on:':' with
+                | [user] ->
+                    Some (`Basic (Uri.pct_decode user, ""))
+                | [user; pass] ->
+                    Some (`Basic (Uri.pct_decode user, Uri.pct_decode pass))
+                | _ ->
+                    Some (`Other (Uri.pct_decode ui))
+      in
+      let headers =
+        if t.discover
+        then Cohttp.Header.of_list [ua; credentials]
+        else
+          Cohttp.Header.of_list [
+            ua; credentials;
+            "Content-Type",
+            sprintf "application/x-%s-request" (string_of_request t.request);
+          ]
+      in
+      let headers = match credentials with
+        | None -> headers
+        | Some auth -> Cohttp.Header.add_authorization headers auth
       in
         Marshal.to_string headers []
 
